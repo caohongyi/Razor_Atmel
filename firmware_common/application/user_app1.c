@@ -135,7 +135,50 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
-{
+{  static u32 u32Counter=0;
+   static u16 u16Counter=0;
+   static u16 u16ValueTime=10;
+   static bool bLightIson = FALSE;
+   
+   static u8 u8ChangeStatus=0;
+   
+  u32Counter++; 
+  u16Counter++;
+   /*increase one per  ms*/
+  if(u16Counter == u16ValueTime)
+  {
+       u16Counter=0;
+       
+     
+       if(bLightIson)
+    {
+      HEARTBEAT_OFF();
+       bLightIson = FALSE;
+    }
+    else
+    {
+      HEARTBEAT_ON();
+       bLightIson = TRUE;
+    }
+  }
+  if(u32Counter == COUNTER_LIMIT_MS)
+  {
+    u32Counter=0;
+    u8ChangeStatus++;
+    if(u8ChangeStatus==2)
+     { u8ChangeStatus=0;
+       if(u16ValueTime<1000)
+       {
+         u16ValueTime*=2;
+       }
+       else
+       {
+         u16ValueTime=1000;
+       }
+       
+     }
+    
+
 
 } /* end UserApp1SM_Idle() */
     
