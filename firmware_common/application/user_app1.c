@@ -135,7 +135,105 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
-{
+{  static u16 auPassword[10]={0};
+   static u16 auCheckPassword[10]={0};
+   static u8 u8Index = 0;
+   static bool bResetIsOn = TRUE;
+  
+   if (IsButtonHeld(BUTTON3,1500))  /*Enter the password creation interface*/
+   {
+    ButtonAcknowledge(BUTTON3);
+    u8Index = 0;
+    bResetIsOn = TRUE;
+    LedBlink(RED,LED_4HZ);
+    LedBlink(GREEN,LED_4HZ);
+   }
+     
+   if (WasButtonPressed(BUTTON0))
+   {
+     ButtonAcknowledge(BUTTON0);
+     auPassword[u8Index] = 0;
+     u8Index++;
+   }
+   
+   if (WasButtonPressed(BUTTON1))
+   {
+     ButtonAcknowledge(BUTTON1);
+     auPassword[u8Index] = 1;
+     u8Index++;
+   }
+   
+   if (WasButtonPressed(BUTTON2))
+   {
+     ButtonAcknowledge(BUTTON2);
+     auPassword[u8Index] = 2;
+     u8Index++;
+   }
+   
+   if (bResetIsOn)   /*Enter the reset password state ,
+                       This is state 2*/
+   {
+    if (u8Index == 10 && WasButtonPressed(BUTTON3))
+         /*Button 3 is the confirmation key*/
+    {
+      ButtonAcknowledge(BUTTON3);
+      for (u8Index=0; u8Index<10; u8Index++)
+      {
+        auCheckPassword[u8Index] = auPassword[u8Index];
+        /*Place the password of state 2 reset in a defined set of arrays*/
+      }
+      bResetIsOn = FALSE;
+      u8Index = 0;
+      LedOff(GREEN);
+      LedOn(RED);
+    }
+    else
+    {
+      ButtonAcknowledge(BUTTON3);
+      /*If the user accidentally presses the button 3 while pressing the key,
+      the key record will be eliminated*/
+    }
+   }
+   
+   else  /*Enter state 3, 
+     enter a password to test whether the password is entered correctly*/
+   {
+     if (u8Index == 10 && WasButtonPressed(BUTTON3))
+     {
+       ButtonAcknowledge(BUTTON3);
+       for (u8Index=0; u8Index<10; u8Index++)
+       {
+         if(auCheckPassword[u8Index] != auPassword[u8Index])
+          /*Compare status 3 input password the same as the reset password*/
+         {
+           break;
+         }
+       }
+       if (u8Index <=9)
+         /*If the two passwords are different red lights flashing*/
+       {
+         LedOff(GREEN);
+         LedBlink(RED,LED_4HZ);
+       }
+       else
+         /*If the two passwords are the same green light flashing*/
+       {
+         LedOff(RED);
+         LedBlink(GREEN,LED_4HZ);
+       }
+       u8Index = 0;
+     }
+     else if (u8Index != 10 && WasButtonPressed(BUTTON3))
+      /*If the user fails to press the confirmation button 10 times or
+       press the number of times more than 10 times direct display
+       of the input error*/
+     {
+       ButtonAcknowledge(BUTTON3);
+       LedOff(GREEN);
+       LedBlink(RED,LED_4HZ);
+       u8Index = 0;
+     }
+   }
 
 } /* end UserApp1SM_Idle() */
     
