@@ -51,7 +51,8 @@ extern volatile u32 G_u32ApplicationFlags;             /* From main.c */
 
 extern volatile u32 G_u32SystemTime1ms;                /* From board-specific source file */
 extern volatile u32 G_u32SystemTime1s;                 /* From board-specific source file */
-
+extern u8 G_au8DebugScanfBuffer[];  /* From debug.c */
+extern u8 G_u8DebugScanfCharCount;  /* From debug.c */
 
 /***********************************************************************************************************************
 Global variable definitions with scope limited to this local application.
@@ -135,7 +136,59 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
-{
+{ static u8 u8NameBuffer[]          = "Caohongyi";
+  static u8 u8LineCharsMessage[]    = "\n\rInput Name:";
+  static u8 u8ResultCharsMessage[]  = "\n\rTimes:";
+  static u8 u8TimeIndex       = 0;
+  static u8 u8Line            = 0;
+  static u8 u8Row             = 0;
+  static u8 u8RowCount        = 3; 
+  static bool bInitialIsOn = TRUE;
+  u8 u8CharCount;
+  
+  if (bInitialIsOn)
+  {
+    DebugPrintf(u8NameBuffer);
+    DebugPrintf(u8LineCharsMessage);
+    bInitialIsOn = FALSE;
+  }
+  
+  if ( strstr((char*)G_au8DebugScanfBuffer,(char*)u8NameBuffer) )
+  {
+    u8CharCount = DebugScanf(G_au8DebugScanfBuffer);
+    if (u8CharCount > 0)
+    {
+      u8TimeIndex++;
+      DebugPrintf(u8ResultCharsMessage);
+      DebugLineFeed();
+      
+      if (u8TimeIndex == 10)
+      {
+        u8RowCount = 4;
+      }
+      
+      for (u8Line=0; u8Line<3; u8Line++)
+      {
+        if (u8Line == 1)
+        {
+          DebugPrintf("*");
+          DebugPrintNumber(u8TimeIndex);
+          DebugPrintf("*");
+        }
+        else
+        {
+          for (u8Row=0; u8Row<u8RowCount; u8Row++)
+          {
+            DebugPrintf("*");
+          }
+        }
+        DebugLineFeed();
+      }
+    }    
+  }
+
+
+        
 
 } /* end UserApp1SM_Idle() */
     
