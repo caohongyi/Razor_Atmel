@@ -87,6 +87,14 @@ Promises:
 */
 void UserApp1Initialize(void)
 {
+      LedOff(WHITE);
+      LedOff(PURPLE);
+      LedOff(BLUE);
+      LedOff(CYAN);
+      LedOff(RED); 
+      LedOff(ORANGE);
+      LedOff(YELLOW);
+      LedOff(GREEN);
  
   /* If good initialization, set state to Idle */
   if( 1 )
@@ -136,6 +144,53 @@ State Machine Function Definitions
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
 {
+  if (WasButtonPressed(BUTTON1))
+  {    ButtonAcknowledge(BUTTON1);
+      LedOn(LCD_RED);
+      LedOff(LCD_GREEN);
+      LedOn(LCD_BLUE);
+      
+      
+      LedOn(WHITE);
+      LedOn(PURPLE);
+      LedOn(BLUE);
+      LedOn(CYAN);
+      LedOff(RED); 
+      LedOff(ORANGE);
+      LedOff(YELLOW);
+      LedOff(GREEN);
+      
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR,"STATE 1");
+      
+      PWMAudioOff(BUZZER1); 
+  }
+
+    if (WasButtonPressed(BUTTON2))
+  {
+    ButtonAcknowledge(BUTTON2);
+      LedOn(LCD_RED);
+      LedOn(LCD_GREEN);
+      LedOff(LCD_BLUE);
+      
+     
+      LedBlink(GREEN,LED_1HZ);
+      LedBlink(YELLOW,LED_2HZ);
+      LedBlink(ORANGE,LED_4HZ);
+      LedBlink(RED,LED_8HZ);
+      
+      LedOff(WHITE);
+      LedOff(PURPLE);
+      LedOff(BLUE);
+      LedOff(CYAN);
+      
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR,"STATE 2");
+      
+      PWMAudioSetFrequency(BUZZER1, 200);
+      PWMAudioOn(BUZZER1); 
+  }
+
 
 } /* end UserApp1SM_Idle() */
     
