@@ -62,9 +62,7 @@ Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
-static u32 UserApp1_u32DataMsgCount = 0;   /* ANT_DATA packets received */
-static u32 UserApp1_u32TickMsgCount = 0;   /* ANT_TICK packets received */
-
+static bool bChannelIsMaster = FALSE;
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -94,8 +92,8 @@ Promises:
  
 void UserApp1Initialize(void)
 {   
-  u8 au8WelcomeMessage[] = "ANT SLAVE DEMO";
-  u8 au8Instructions[] = "B0 toggles radio";
+  u8 au8WelcomeMessage[] = "Hide and Go Seek!";
+  u8 au8Instructions[] = "Press B0 to Start";
   AntAssignChannelInfoType sAntSetupData;
   
   /* Clear screen and place start messages */
@@ -103,17 +101,28 @@ void UserApp1Initialize(void)
   LCDMessage(LINE1_START_ADDR, au8WelcomeMessage); 
   LCDMessage(LINE2_START_ADDR, au8Instructions); 
 
-  /* Start with LED0 in RED state = channel is not configured */
-  LedOn(RED);
+  
   
  /* Configure ANT for this application */
-  sAntSetupData.AntChannel          = ANT_CHANNEL_USERAPP;
-  sAntSetupData.AntChannelType      = ANT_CHANNEL_TYPE_USERAPP;
+  
+  if(bChannelIsMaster)
+  {
+    sAntSetupData.AntChannel          = ANT_CHANNEL_MASTER;
+    sAntSetupData.AntChannelType      = ANT_CHANNEL_TYPE_MASTER;
+    sAntSetupData.AntDeviceIdLo       = ANT_DEVICE0ID_LO_USERAPP;
+    sAntSetupData.AntDeviceIdHi       = ANT_DEVICE0ID_HI_USERAPP;
+  }
+  else
+  {
+    sAntSetupData.AntChannel          = ANT_CHANNEL_SLAVE;
+    sAntSetupData.AntChannelType      = ANT_CHANNEL_TYPE_SLAVE;
+    sAntSetupData.AntDeviceIdLo       = ANT_DEVICE1ID_LO_USERAPP;
+    sAntSetupData.AntDeviceIdHi       = ANT_DEVICE1ID_HI_USERAPP;
+  }
+    
   sAntSetupData.AntChannelPeriodLo  = ANT_CHANNEL_PERIOD_LO_USERAPP;
   sAntSetupData.AntChannelPeriodHi  = ANT_CHANNEL_PERIOD_HI_USERAPP;
   
-  sAntSetupData.AntDeviceIdLo       = ANT_DEVICEID_LO_USERAPP;
-  sAntSetupData.AntDeviceIdHi       = ANT_DEVICEID_HI_USERAPP;
   sAntSetupData.AntDeviceType       = ANT_DEVICE_TYPE_USERAPP;
   sAntSetupData.AntTransmissionType = ANT_TRANSMISSION_TYPE_USERAPP;
   sAntSetupData.AntFrequency        = ANT_FREQUENCY_USERAPP;
@@ -128,15 +137,13 @@ void UserApp1Initialize(void)
   /* If good initialization, set state to Idle */
   if( AntAssignChannel(&sAntSetupData) )
   {
-    /* Channel is configured, so change LED to yellow */
-    LedOff(RED);
-    LedOn(YELLOW);
-    UserApp1_StateMachine = UserApp1SM_WaitChannelAssign;
+    /* Channel is configured */
+    
+    UserApp1_StateMachine = UserApp1SM_AntChannelAssign;
   }
   else
   {
-    /* The task isn't properly initialized, so shut it down and don't run */
-    LedBlink(RED, LED_4HZ);
+    
     UserApp1_StateMachine = UserApp1SM_Error;
   }
 } /* end UserApp1Initialize() */
@@ -173,29 +180,37 @@ State Machine Function Definitions
 **********************************************************************************************************************/
 
 /*-------------------------------------------------------------------------------------------------------------------*/
-/* Wait for ??? */
-static void UserApp1SM_WaitChannelAssign(void)
+/* Wait for assignment of channel */
+static void UserApp1SM_AntChannelAssign(void)
 {
-  
-}
-
-static void UserAppSM_WaitChannelOpen(void)
-{
-  /* Monitor the channel status to check if channel is opened */
-  if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_OPEN)
+   
+  if(AntRadioStatusChannel(sAntSetupData.AntChannel) == ANT_CONFIGURED)
   {
-    LedOn(GREEN);
-    UserApp1_StateMachine = UserAppSM_ChannelOpen;
+    /* if channel configure succfully,open channel*/
+    if(bChannelIsMaster)
+    {
+      UserApp1_StateMachine = UserApp1SM_Idle;
+    }
+    else
+    {
+      UserApp1_StateMachine =  UserApp1Initialize;
+      bChannelIsMaster = TRUE;
+    }
+    
+   
   }
   
   /* Check for timeout */
   if( IsTimeUp(&UserApp1_u32Timeout, TIMEOUT_VALUE) )
   {
-    AntCloseChannelNumber(ANT_CHANNEL_USERAPP);
-    LedOff(GREEN);
-    LedOn(YELLOW);
-    UserApp1_StateMachine = UserApp1SM_Idle;
+    
+    UserApp1_StateMachine = UserApp1SM_Error;
   }
+}
+
+static void UserAppSM_WaitChannelOpen(void)
+{
+ 
 } /* end UserAppSM_WaitChannelOpen() */
 
 static void UserAppSM_ChannelOpen()
@@ -214,7 +229,7 @@ static void UserAppSM_ChannelOpen()
     ButtonAcknowledge(BUTTON0);
     
     /* Queue close channel, initialize the u8LastState variable and change LED to blinking green to indicate channel is closing */
-    AntCloseChannelNumber(ANT_CHANNEL_USERAPP);
+   
     u8LastState = 0xff;
     LedOff(YELLOW);
     LedOff(BLUE);
@@ -226,27 +241,18 @@ static void UserAppSM_ChannelOpen()
   } /* end if(WasButtonPressed(BUTTON0)) */
   
   /* A slave channel can close on its own, so explicitly check channel status */
-  if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN)
-  {
-    LedBlink(GREEN, LED_2HZ);
-    LedOff(BLUE);
-    u8LastState = 0xff;
-    
-    UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserAppSM_WaitChannelClose;
-  } /* if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) != ANT_OPEN) */
-/* Always check for ANT messages */
+ 
   if( AntReadAppMessageBuffer() )
   {
      /* New data message: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
-      UserApp1_u32DataMsgCount++;
+      
     } /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
 
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
     {
-      UserApp1_u32TickMsgCount++;
+     
     } /* end else if(G_eAntApiCurrentMessageClass == ANT_TICK) */
   } /* end AntReadAppMessageBuffer() */  
 }
@@ -254,7 +260,7 @@ static void UserAppSM_ChannelOpen()
 static void UserAppSM_WaitChannelClose(void)
 {
   /* Monitor the channel status to check if channel is closed */
-  if(AntRadioStatusChannel(ANT_CHANNEL_USERAPP) == ANT_CLOSED)
+  if(AntRadioStatusChannel(ANT_CHANNEL_MASTER) == ANT_CLOSED)
   {
     LedOff(GREEN);
     LedOn(YELLOW);
@@ -286,7 +292,7 @@ static void UserApp1SM_Idle(void)
     ButtonAcknowledge(BUTTON0);
     
     /* Queue open channel and change LED0 from yellow to blinking green to indicate channel is opening */
-    AntOpenChannelNumber(ANT_CHANNEL_USERAPP);
+    AntOpenChannelNumber(ANT_CHANNEL_MASTER);
 
     LedOff(YELLOW);
     LedBlink(GREEN, LED_2HZ);

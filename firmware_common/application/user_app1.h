@@ -28,10 +28,14 @@ Type Definitions
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
-#define ANT_CHANNEL_USERAPP             ANT_CHANNEL_0         
-#define ANT_CHANNEL_TYPE_USERAPP        CHANNEL_TYPE_SLAVE    
-#define ANT_DEVICEID_LO_USERAPP         (u8)0               
-#define ANT_DEVICEID_HI_USERAPP         (u8)0        
+#define ANT_CHANNEL_MASTER             ANT_CHANNEL_0         
+#define ANT_CHANNEL_TYPE_MASTER        CHANNEL_TYPE_MASTER    
+#define ANT_CHANNEL_SLAVE             ANT_CHANNEL_1         
+#define ANT_CHANNEL_TYPE_SLAVE        CHANNEL_TYPE_SLAVE    
+#define ANT_DEVICE0ID_LO_USERAPP         (u8)0               
+#define ANT_DEVICE0ID_HI_USERAPP         (u8)0        
+#define ANT_DEVICE1ID_LO_USERAPP         (u8)0               
+#define ANT_DEVICE1ID_HI_USERAPP         (u8)0      
 #define ANT_DEVICE_TYPE_USERAPP         (u8)0        
 #define ANT_TRANSMISSION_TYPE_USERAPP   (u8)0             
 #define ANT_CHANNEL_PERIOD_LO_USERAPP   (u8)0x00       
@@ -68,7 +72,7 @@ static void UserApp1SM_Idle(void);
 
 static void UserApp1SM_Error(void);         
 
-static void UserApp1SM_WaitChannelAssign(void);
+static void UserApp1SM_AntChannelAssign(void);
 
 static void UserAppSM_WaitChannelOpen(void);
 
