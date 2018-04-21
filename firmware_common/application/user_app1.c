@@ -62,6 +62,7 @@ Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
+static AntAssignChannelInfoType sAntSetupData;
 static bool bChannelIsMaster = FALSE;
 /**********************************************************************************************************************
 Function Definitions
@@ -94,7 +95,7 @@ void UserApp1Initialize(void)
 {   
   u8 au8WelcomeMessage[] = "Hide and Go Seek!";
   u8 au8Instructions[] = "Press B0 to Start";
-  AntAssignChannelInfoType sAntSetupData;
+  
   
   /* Clear screen and place start messages */
   LCDCommand(LCD_CLEAR_CMD);

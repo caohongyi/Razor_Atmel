@@ -76,11 +76,11 @@ static void UserApp1SM_AntChannelAssign(void);
 
 static void UserAppSM_WaitChannelOpen(void);
 
-static void UserAppSM_ChannelOpen(void);
-
 static void UserAppSM_WaitChannelClose(void);
 
+static void UserAppSM_ChannelMasterOpen(void);
 
+static void UserAppSM_ChannelSlaveOpen(void);
 #endif /* __USER_APP1_H */
 
 
