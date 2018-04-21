@@ -209,12 +209,54 @@ static void UserApp1SM_AntChannelAssign(void)
   }
 }
 
+static void UserApp1SM_Idle(void)
+{  
+ 
+  /* Look for BUTTON 0 to open channel */
+  if(WasButtonPressed(BUTTON0))
+  {
+    
+    ButtonAcknowledge(BUTTON0);
+    
+   
+    AntOpenChannelNumber(sAntSetupData.AntChannel);
+
+   
+    /* Set timer and advance states */
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
+    UserApp1_StateMachine = UserAppSM_WaitChannelOpen;
+  }
+
+} /* end UserApp1SM_Idle() */
+    
 static void UserAppSM_WaitChannelOpen(void)
 {
- 
+  static u8 au8MasterMessage1[]="Hide!";
+  static u8 au8MasterMessage2[]="I am hiding";
+  static u8 au8SlaveMessage1[]="Seeker!";
+  static u8 au8SlaveMessage2[]="He is hiding:10s";
+  if(AntRadioStatusChannel(sAntSetupData.AntChannel) == ANT_OPEN)
+  {
+    if(bChannelIsMaster)
+    {
+      
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR,au8MasterMessage1); 
+      LCDMessage(LINE2_START_ADDR,au8MasterMessage2); 
+      UserApp1_StateMachine = UserAppSM_ChannelMasterOpen;
+    }
+    else
+    {
+      LCDCommand(LCD_CLEAR_CMD);
+      LCDMessage(LINE1_START_ADDR,au8SlaveMessage1); 
+      LCDMessage(LINE2_START_ADDR,au8SlaveMessage2); 
+      UserApp1_StateMachine = UserAppSM_ChannelSlaveOpen;
+    }
+    
+  }
 } /* end UserAppSM_WaitChannelOpen() */
 
-static void UserAppSM_ChannelOpen()
+static void UserAppSM_ChannelMasterOpen()
 {
   static u8 u8LastState = 0xff;
   static u8 au8TickMessage[] = "EVENT x\n\r";  /* "x" at index [6] will be replaced by the current code */
@@ -258,6 +300,10 @@ static void UserAppSM_ChannelOpen()
   } /* end AntReadAppMessageBuffer() */  
 }
 
+static void UserAppSM_ChannelSlaveOpen(void)
+{
+  
+}
 static void UserAppSM_WaitChannelClose(void)
 {
   /* Monitor the channel status to check if channel is closed */
@@ -283,28 +329,7 @@ static void UserAppSM_WaitChannelClose(void)
     
 } /* end UserAppSM_WaitChannelClose() */
 
-static void UserApp1SM_Idle(void)
-{  
- 
-  /* Look for BUTTON 0 to open channel */
-  if(WasButtonPressed(BUTTON0))
-  {
-    /* Got the button, so complete one-time actions before next state */
-    ButtonAcknowledge(BUTTON0);
-    
-    /* Queue open channel and change LED0 from yellow to blinking green to indicate channel is opening */
-    AntOpenChannelNumber(ANT_CHANNEL_MASTER);
 
-    LedOff(YELLOW);
-    LedBlink(GREEN, LED_2HZ);
-    
-    /* Set timer and advance states */
-    UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserAppSM_WaitChannelOpen;
-  }
-
-} /* end UserApp1SM_Idle() */
-    
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
