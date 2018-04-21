@@ -44,6 +44,10 @@ Constants / Definitions
 #define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_4DBM 
 #define TIMEOUT_VALUE                   (u16)3000
 #define KEY_PARAMETER                   (u8)0x12
+#define ONE_SECOND_TIME                 (u16)1000
+#define HIDING_TIME_COUNTER             (u8)10
+#define HIDING_TIME_DIS_PLACE           (u8)15
+#define TONE_TIME                       (u16)400
 /**********************************************************************************************************************
 Function Declarations
 **********************************************************************************************************************/
@@ -85,6 +89,8 @@ static void UserAppSM_ChannelSlaveOpen(void);
 static void UserAppSM_EndSearching(void);
 
 static void UserAppSM_WaitForHiding(void);
+
+static void UserAppSM_RoleTransition(void);
 #endif /* __USER_APP1_H */
 
 

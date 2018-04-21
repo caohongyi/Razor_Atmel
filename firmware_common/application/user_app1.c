@@ -235,6 +235,8 @@ static void UserAppSM_WaitChannelOpen(void)
   static u8 au8MasterMessage2[]="I am hiding";
   static u8 au8SlaveMessage1[]="Seeker!";
   static u8 au8SlaveMessage2[]="He is hiding:10s";
+  
+  /*display interface before channel open*/
   if(AntRadioStatusChannel(sAntSetupData.AntChannel) == ANT_OPEN)
   {
     if(bChannelIsMaster)
@@ -250,12 +252,46 @@ static void UserAppSM_WaitChannelOpen(void)
       LCDCommand(LCD_CLEAR_CMD);
       LCDMessage(LINE1_START_ADDR,au8SlaveMessage1); 
       LCDMessage(LINE2_START_ADDR,au8SlaveMessage2); 
-      UserApp1_StateMachine = UserAppSM_ChannelSlaveOpen;
+      UserApp1_StateMachine = UserAppSM_WaitForHiding;
     }
     
   }
 } /* end UserAppSM_WaitChannelOpen() */
 
+/*Wait for Master hiding*/
+static void UserAppSM_WaitForHiding(void)
+{
+  static u16 u16TimeCounter1ms = 0;
+  static u8 u8HidingTime = HIDING_TIME_COUNTER;
+  static u8 au8HidingTimeString[2] = "10";
+  
+  u16TimeCounter1ms++;
+  
+  if(ONE_SECOND_TIME == u16TimeCounter1ms)
+  {
+     u16TimeCounter1ms=0;
+     
+     /*The countdown is displayed on the screen*/
+     u8HidingTime--;
+     NumberToAscii(u8HidingTime,au8HidingTimeString);
+     LCDClearChars(LINE2_START_ADDR + HIDING_TIME_DIS_PLACE,2);
+     LCDMessage(LINE2_START_ADDR + HIDING_TIME_DIS_PLACE,au8HidingTimeString);
+  }
+  
+  /*Ready for searching*/
+  if(0 == u8HidingTime)
+  {
+    u8HidingTime = HIDING_TIME_COUNTER;
+    LCDClearChars(LINE2_START_ADDR, 20); 
+    LCDMessage(LINE2_START_ADDR," Are you Ready?"); 
+    
+    PWMAudioSetFrequency(BUZZER1,C3);
+    PWMAudioOn(BUZZER1);
+    
+    UserApp1_StateMachine = UserAppSM_ChannelSlaveOpen ; 
+  }
+  
+}
 static void UserAppSM_ChannelMasterOpen()
 {
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
@@ -281,12 +317,14 @@ static void UserAppSM_ChannelMasterOpen()
         LCDClearChars(LINE2_START_ADDR, 20); 
       }
       
+      /*get the message from Slave*/
       if(G_au8AntApiCurrentMessageBytes[6] == KEY_PARAMETER
          && bSearching)
       {
         LCDMessage(LINE2_START_ADDR,"He is searching me");
       }
       
+      /*Slave found Master*/
       if(G_au8AntApiCurrentMessageBytes[5] == KEY_PARAMETER)
       {
         LCDClearChars(LINE2_START_ADDR, 20);
@@ -307,30 +345,60 @@ static void UserAppSM_ChannelMasterOpen()
 
 static void UserAppSM_EndSearching(void)
 {
+  static u32 au32Music[]={F4,F4,A4,A4,D4,
+                          D4,F4,F4,A3S,A3S,
+                          D4,D4,C4,C4,E4,E4,NO};
+  static u8 u8ToneIndex = 0;
+  static u16 u16TimeCounter = 0;
+ 
   
+  
+  u16TimeCounter++;
+  
+  if(TONE_TIME ==  u16TimeCounter)
+  {
+    u16TimeCounter = 0;
+    u8ToneIndex++;
+    
+    PWMAudioSetFrequency(BUZZER1,au32Music[u8ToneIndex]);
+    PWMAudioOn(BUZZER1);
+  }
+  
+  if(au32Music[u8ToneIndex] == NO)
+  {
+    u8ToneIndex = 0;
+  }
+    
+  LedBlink(BLUE,LED_2HZ);
+  
+  /* Look for BUTTON 2 to close channel */
+  if(IsButtonPressed(BUTTON2))
+  {
+    PWMAudioOff(BUZZER1);
+  
+    AntCloseChannelNumber(sAntSetupData.AntChannel);
+
+   
+    /* Set timer and advance states */
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
+    UserApp1_StateMachine = UserAppSM_WaitChannelClose;
+  }
 }
 
-static void UserAppSM_ChannelSlaveOpen(void)
-{
-  
-}
 static void UserAppSM_WaitChannelClose(void)
 {
   /* Monitor the channel status to check if channel is closed */
-  if(AntRadioStatusChannel(ANT_CHANNEL_MASTER) == ANT_CLOSED)
+  if(AntRadioStatusChannel( sAntSetupData.AntChannel) == ANT_CLOSED)
   {
-    LedOff(GREEN);
-    LedOn(YELLOW);
+    
 
-    UserApp1_StateMachine = UserApp1SM_Idle;
+    UserApp1_StateMachine = UserAppSM_RoleTransition;
   }
   
   /* Check for timeout */
   if( IsTimeUp(&UserApp1_u32Timeout, TIMEOUT_VALUE) )
   {
-    LedOff(GREEN);
-    LedOff(YELLOW);
-    LedBlink(RED, LED_4HZ);
+    
 
     UserApp1_StateMachine = UserApp1SM_Error;
   }
@@ -339,7 +407,33 @@ static void UserAppSM_WaitChannelClose(void)
     
 } /* end UserAppSM_WaitChannelClose() */
 
+static void UserAppSM_RoleTransition(void)
+{
+  if(bChannelIsMaster)
+  {
+     sAntSetupData.AntChannel = ANT_CHANNEL_SLAVE;
+     bChannelIsMaster = FALSE;
+   }
+  else
+  {
+    sAntSetupData.AntChannel = ANT_CHANNEL_MASTER;
+    bChannelIsMaster = TRUE;  
+  }
+  
+  
+    AntOpenChannelNumber(sAntSetupData.AntChannel);
 
+   
+    /* Set timer and advance states */
+    UserApp1_u32Timeout = G_u32SystemTime1ms;
+    UserApp1_StateMachine = UserAppSM_WaitChannelOpen;
+}
+
+
+static void UserAppSM_ChannelSlaveOpen(void)
+{
+  
+}
 
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
