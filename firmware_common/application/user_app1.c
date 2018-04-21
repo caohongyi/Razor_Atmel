@@ -258,39 +258,44 @@ static void UserAppSM_WaitChannelOpen(void)
 
 static void UserAppSM_ChannelMasterOpen()
 {
-  static u8 u8LastState = 0xff;
-  static u8 au8TickMessage[] = "EVENT x\n\r";  /* "x" at index [6] will be replaced by the current code */
-  static u8 au8DataContent[] = "xxxxxxxxxxxxxxxx";
-  static u8 au8LastAntData[ANT_APPLICATION_MESSAGE_BYTES] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
   static u8 au8TestMessage[] = {0, 0, 0, 0, 0xA5, 0, 0, 0};
-  bool bGotNewData;
+  static u8 au8MasterMessage3[]="Hide Ok?";
+  static bool bSearching = FALSE;
   
-  /* Check for BUTTON0 to close channel */
-  if(WasButtonPressed(BUTTON0))
-  {
-    /* Got the button, so complete one-time actions before next state */
-    ButtonAcknowledge(BUTTON0);
-    
-    /* Queue close channel, initialize the u8LastState variable and change LED to blinking green to indicate channel is closing */
-   
-    u8LastState = 0xff;
-    LedOff(YELLOW);
-    LedOff(BLUE);
-    LedBlink(GREEN, LED_2HZ);
-    
-    /* Set timer and advance states */
-    UserApp1_u32Timeout = G_u32SystemTime1ms;
-    UserApp1_StateMachine = UserAppSM_WaitChannelClose;
-  } /* end if(WasButtonPressed(BUTTON0)) */
-  
-  /* A slave channel can close on its own, so explicitly check channel status */
- 
-  if( AntReadAppMessageBuffer() )
+   if( AntReadAppMessageBuffer() )
   {
      /* New data message: check what it is */
     if(G_eAntApiCurrentMessageClass == ANT_DATA)
     {
+      if(G_au8AntApiCurrentMessageBytes[7] == KEY_PARAMETER)
+      {
+        LCDClearChars(LINE2_START_ADDR, 20); 
+        LCDMessage(LINE2_START_ADDR,au8MasterMessage3);
+        LCDMessage(LINE2_START_ADDR + 10,"(B1 Ok)");
+      }
       
+      if(IsButtonPressed(BUTTON1))
+      {
+        bSearching = TRUE;
+        au8TestMessage[7] = KEY_PARAMETER;
+        LCDClearChars(LINE2_START_ADDR, 20); 
+      }
+      
+      if(G_au8AntApiCurrentMessageBytes[6] == KEY_PARAMETER
+         && bSearching)
+      {
+        LCDMessage(LINE2_START_ADDR,"He is searching me");
+      }
+      
+      if(G_au8AntApiCurrentMessageBytes[5] == KEY_PARAMETER)
+      {
+        LCDClearChars(LINE2_START_ADDR, 20);
+        au8TestMessage[5] = KEY_PARAMETER;
+        bSearching = FALSE;
+        LCDMessage(LINE2_START_ADDR,"Found me!(B2 quit)");
+        UserApp1_StateMachine = UserAppSM_EndSearching;
+      }
+      AntQueueBroadcastMessage(sAntSetupData.AntChannel,au8TestMessage);
     } /* end if(G_eAntApiCurrentMessageClass == ANT_DATA) */
 
     else if(G_eAntApiCurrentMessageClass == ANT_TICK)
@@ -298,6 +303,11 @@ static void UserAppSM_ChannelMasterOpen()
      
     } /* end else if(G_eAntApiCurrentMessageClass == ANT_TICK) */
   } /* end AntReadAppMessageBuffer() */  
+}
+
+static void UserAppSM_EndSearching(void)
+{
+  
 }
 
 static void UserAppSM_ChannelSlaveOpen(void)
