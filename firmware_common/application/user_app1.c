@@ -250,8 +250,8 @@ static void UserApp1SM_ChannelOpen()
   
   
   
- 
-    if ( AntReadAppMessageBuffer() )
+  
+     if ( AntReadAppMessageBuffer() )
     {
       
       /* New data message: check what it is */
