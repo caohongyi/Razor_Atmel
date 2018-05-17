@@ -248,10 +248,7 @@ static void UserApp1SM_ChannelOpen()
   static u8 au8ModeSelectionString3[]="Swimming";
   
   
-  
-  
-  
-     if ( AntReadAppMessageBuffer() )
+       if ( AntReadAppMessageBuffer() )
     {
       
       /* New data message: check what it is */
