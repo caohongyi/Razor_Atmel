@@ -28,8 +28,21 @@ Type Definitions
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
-
-
+#define ANT_CHANNEL_USERAPP             ANT_CHANNEL_0         
+#define ANT_CHANNEL_TYPE_USERAPP        CHANNEL_TYPE_SLAVE    
+#define ANT_DEVICEID_LO_USERAPP         (u8)0x11               
+#define ANT_DEVICEID_HI_USERAPP         (u8)0x1A        
+#define ANT_DEVICE_TYPE_USERAPP         (u8)120        
+#define ANT_TRANSMISSION_TYPE_USERAPP   (u8)1             
+#define ANT_CHANNEL_PERIOD_LO_USERAPP   (u8)0x86       
+#define ANT_CHANNEL_PERIOD_HI_USERAPP   (u8)0x1F     
+#define ANT_FREQUENCY_USERAPP           (u8)57           
+#define ANT_TX_POWER_USERAPP            RADIO_TX_POWER_4DBM 
+#define TIMEOUT_VALUE                   (u16)3000
+#define HEART_RATE_STATUS               (u8)0
+#define BATTERY_LEVEL_STATUS            (u8)1
+#define MODE_SELECTION_STATUS           (u8)2
+#define LEVEL_DIS_PLACE                 (u8)15
 /**********************************************************************************************************************
 Function Declarations
 **********************************************************************************************************************/
@@ -58,7 +71,13 @@ static void UserApp1SM_Idle(void);
 
 static void UserApp1SM_Error(void);         
 
+static void UserApp1SM_AntChannelAssign(void);
 
+static void UserApp1SM_WaitChannelOpen(void);
+
+static void UserApp1SM_ChannelOpen(void);
+
+static void UserApp1SM_WaitChannelClose(void);
 #endif /* __USER_APP1_H */
 
 
