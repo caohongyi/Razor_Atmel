@@ -59,8 +59,10 @@ Variable names shall start with "UserApp1_" and be declared as static.
 ***********************************************************************************************************************/
 static fnCode_type UserApp1_StateMachine;            /* The state machine function pointer */
 //static u32 UserApp1_u32Timeout;                      /* Timeout counter used across states */
-
-
+static u8 au8VolumeDisplay[] = "Volume: 50";
+static u8 au8FunctionDisplay1[] = "MIC Signal Input";
+static u8 au8FunctionDisplay2[] = "Mobile Signal Input";
+static u8 au8FunctionDisplay3[] = "Silent Mode";
 /**********************************************************************************************************************
 Function Definitions
 **********************************************************************************************************************/
@@ -135,11 +137,162 @@ State Machine Function Definitions
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Wait for ??? */
 static void UserApp1SM_Idle(void)
-{
-
+{ 
+    static u8 u8Status = 0;
+    
+    if(IsButtonPressed(BUTTON3))
+    {
+      LedOn(RED);
+    }
+    else
+    {
+      LedOff(RED);
+    }
+    
+    if(WasButtonPressed(BUTTON3))
+    { 
+       ButtonAcknowledge(BUTTON3);
+       
+        u8Status++;
+        
+      
+        if(u8Status == 1)
+       {
+         
+         UserApp1_StateMachine = UserAppSM_MobileSignalInput;
+       }
+      
+       if(u8Status == 2)
+       {
+         
+         UserApp1_StateMachine = UserAppSM_MICSignalInput;
+       }
+      
+       if(u8Status == 3)
+       {
+         
+         UserApp1_StateMachine = UserAppSM_SilentMode;
+         u8Status = 0;
+       }
+      
+    }
+      
+     
+  
 } /* end UserApp1SM_Idle() */
     
+static void UserAppSM_MobileSignalInput(void)
+{
+  LedOff(PURPLE);
+  LedOn(GREEN);
+  
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR,au8VolumeDisplay); 
+  LCDMessage(LINE2_START_ADDR,au8FunctionDisplay2);
+  
+  AT91C_BASE_PIOB->PIO_CODR |= PB_03_BLADE_AN0;//A
+  AT91C_BASE_PIOB->PIO_CODR |= PB_04_BLADE_AN1;//B
+  AT91C_BASE_PIOA->PIO_CODR |= PA_11_BLADE_UPIMO;//C
+  
+   if(IsButtonPressed(BUTTON0))
+    {
+      LedOn(RED);
+    }
+    else
+    {
+      LedOff(RED);
+    }
+   
+  if(WasButtonPressed(BUTTON0))
+  {
+    ButtonAcknowledge(BUTTON0);
+    
+    AT91C_BASE_PIOA->PIO_CODR |= PA_13_BLADE_MISO;
+    AT91C_BASE_PIOA->PIO_SODR |= PA_14_BLADE_MOSI;  
+    AT91C_BASE_PIOA->PIO_SODR |= PA_12_BLADE_UPOMI ; 
+    AT91C_BASE_PIOA->PIO_CODR |= PA_12_BLADE_UPOMI ;
+  }
+ 
+    
+   if(IsButtonPressed(BUTTON1))
+    {
+      LedOn(RED);
+    }
+    else
+    {
+      LedOff(RED);
+    }
+   
+    if(WasButtonPressed(BUTTON1))
+    {
+       ButtonAcknowledge(BUTTON1);
+       
+       AT91C_BASE_PIOA->PIO_CODR |= PA_13_BLADE_MISO;
+       AT91C_BASE_PIOA->PIO_CODR |= PA_14_BLADE_MOSI;  
+       AT91C_BASE_PIOA->PIO_SODR |= PA_12_BLADE_UPOMI ; 
+       AT91C_BASE_PIOA->PIO_CODR |= PA_12_BLADE_UPOMI ;
+    }
+   
+    UserApp1_StateMachine = UserApp1SM_Idle;
+  }
 
+static void UserAppSM_MICSignalInput(void)
+{
+  LedOff(GREEN);
+  LedOn(BLUE);
+  LCDCommand(LCD_CLEAR_CMD);
+  LCDMessage(LINE1_START_ADDR,au8VolumeDisplay); 
+  LCDMessage(LINE2_START_ADDR,au8FunctionDisplay1);
+  
+  AT91C_BASE_PIOB->PIO_SODR |= PB_03_BLADE_AN0;//A
+  AT91C_BASE_PIOB->PIO_CODR |= PB_04_BLADE_AN1;//B
+  AT91C_BASE_PIOA->PIO_CODR |= PA_11_BLADE_UPIMO;//C
+  
+  if(WasButtonPressed(BUTTON0))
+  {
+    ButtonAcknowledge(BUTTON0);
+    
+    AT91C_BASE_PIOA->PIO_CODR |= PA_13_BLADE_MISO;
+    AT91C_BASE_PIOA->PIO_SODR |= PA_14_BLADE_MOSI;
+    
+    for(u16 i=0;i<10;i++)
+    {
+     AT91C_BASE_PIOA->PIO_SODR |= PA_12_BLADE_UPOMI ; 
+     for(u16 j=0;j<100;j++)
+     {
+       
+     }
+     AT91C_BASE_PIOA->PIO_CODR |= PA_12_BLADE_UPOMI ;
+    }
+  }
+  
+  if(WasButtonPressed(BUTTON1))
+  {
+     ButtonAcknowledge(BUTTON1);
+     
+     AT91C_BASE_PIOA->PIO_CODR |= PA_13_BLADE_MISO;
+     AT91C_BASE_PIOA->PIO_CODR |= PA_14_BLADE_MOSI;  
+     AT91C_BASE_PIOA->PIO_SODR |= PA_12_BLADE_UPOMI ; 
+     AT91C_BASE_PIOA->PIO_CODR |= PA_12_BLADE_UPOMI ;
+  }
+  
+   UserApp1_StateMachine = UserApp1SM_Idle;
+}
+
+static void UserAppSM_SilentMode(void)
+{
+  LedOff(BLUE);
+  LedOn(PURPLE);
+  LCDCommand(LCD_CLEAR_CMD);
+  
+  LCDMessage(LINE2_START_ADDR,au8FunctionDisplay3);
+  
+  AT91C_BASE_PIOB->PIO_SODR |= PB_04_BLADE_AN1;//B
+  AT91C_BASE_PIOA->PIO_CODR |= PA_11_BLADE_UPIMO;//C
+  
+  UserApp1_StateMachine = UserApp1SM_Idle;
+  
+}
 /*-------------------------------------------------------------------------------------------------------------------*/
 /* Handle an error */
 static void UserApp1SM_Error(void)          

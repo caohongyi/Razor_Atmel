@@ -56,7 +56,13 @@ State Machine Declarations
 ***********************************************************************************************************************/
 static void UserApp1SM_Idle(void);    
 
-static void UserApp1SM_Error(void);         
+static void UserApp1SM_Error(void); 
+
+static void UserAppSM_MobileSignalInput(void);
+
+static void UserAppSM_MICSignalInput(void);
+
+static void UserAppSM_SilentMode(void);
 
 
 #endif /* __USER_APP1_H */
