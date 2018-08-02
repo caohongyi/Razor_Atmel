@@ -2008,6 +2008,9 @@
         <name>$PROJ_DIR$\..\..\firmware_common\drivers\buttons.c</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\ChineseWord.c</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\..\firmware_common\drivers\exceptions.c</name>
       </file>
       <file>

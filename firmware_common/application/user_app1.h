@@ -28,7 +28,10 @@ Type Definitions
 /**********************************************************************************************************************
 Constants / Definitions
 **********************************************************************************************************************/
-
+#define COUNTER_LIMIT_MS (u32)10
+#define LINE_MAX_NUMBER  (u8)16
+#define ROW_MAX_NUMBER   (u8)10
+#define Word_NUMBER      (u8)10
 
 /**********************************************************************************************************************
 Function Declarations
@@ -56,8 +59,21 @@ State Machine Declarations
 ***********************************************************************************************************************/
 static void UserApp1SM_Idle(void);    
 
-static void UserApp1SM_Error(void);         
+static void UserApp1SM_Error(void); 
 
+static void Screen_Display(void);
+
+static void Send_One_Line_Data(u8* au8DataArray);
+
+static void Display_One_Line(u8 u8LineNumber);
+
+static void Clear_One_Line(void);
+
+static void GetChineseData(void);
+
+static void Row_Choose_Control(u8 u8Data);
+
+static void Line_Choose_Control(u8 u8LineNumber);
 
 #endif /* __USER_APP1_H */
 
